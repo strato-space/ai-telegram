@@ -2,7 +2,7 @@
 
 ## Project Intent
 
-This repo explores Telegram-native AI bots using fast-agent ACP/MCP.
+This repo explores Telegram-native AI bots using fast-agent.ai ACP/MCP.
 
 ## Workflow
 
