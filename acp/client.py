@@ -117,6 +117,7 @@ class AcpConsoleClient(Client):
         *,
         auto_approve: bool,
         allow_always: bool,
+        show_tools: bool,
         strip_leading_newlines: bool,
         stream_chunk_delimeter: bool,
         out_stream: Any = sys.stdout,
@@ -124,6 +125,7 @@ class AcpConsoleClient(Client):
     ) -> None:
         self._auto_approve = auto_approve
         self._allow_always = allow_always
+        self._show_tools = show_tools
         self._strip_leading_newlines = strip_leading_newlines
         self._stream_chunk_delimeter = stream_chunk_delimeter
         self._out = out_stream
@@ -154,7 +156,11 @@ class AcpConsoleClient(Client):
         if update_type in ("tool_call_start", "tool_call_update"):
             self._flush_chunk_delimeter()
             title = getattr(update, "title", None) or _safe_get(update, "title")
-            debug_print("[acp]", f"Tool update: {title}")
+            if self._show_tools:
+                self._err.write(f"[acp][tool] {title}\n")
+                self._err.flush()
+            else:
+                debug_print("[acp]", f"Tool update: {title}")
             return
         if update_type:
             self._flush_chunk_delimeter()
@@ -458,6 +464,7 @@ async def run_via_socket(args: argparse.Namespace) -> int:
         "mode_id": args.mode_id,
         "auto_approve": args.auto_approve or args.allow_always,
         "allow_always": args.allow_always,
+        "show_tools": args.show_tools,
         "strip_leading_newlines": args.strip_leading_newlines,
     }
     await _send_socket_message(writer, request)
@@ -488,6 +495,13 @@ async def run_via_socket(args: argparse.Namespace) -> int:
                 text = message.get("message") or "Unknown ACP error."
                 sys.stderr.write(f"[acp][error] {text}\n")
                 sys.stderr.flush()
+                continue
+            if msg_type == "tool":
+                if args.show_tools:
+                    title = message.get("title") or "tool"
+                    event = message.get("event") or "tool_call"
+                    sys.stderr.write(f"[acp][tool] {event}: {title}\n")
+                    sys.stderr.flush()
                 continue
             if msg_type == "permission_request":
                 options = message.get("options") or []
@@ -562,6 +576,7 @@ async def run(args: argparse.Namespace) -> int:
     client = AcpConsoleClient(
         auto_approve=auto_approve,
         allow_always=args.allow_always,
+        show_tools=args.show_tools,
         strip_leading_newlines=args.strip_leading_newlines,
         stream_chunk_delimeter=args.stream_chunk_delimeter,
     )
@@ -688,6 +703,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         "--stream-chunk-delimeter",
         action="store_true",
         help="Print '.' to stderr for each streamed chunk.",
+    )
+    parser.add_argument(
+        "--show-tools",
+        action="store_true",
+        help="Print tool call events to stderr.",
     )
     return parser.parse_args(argv)
 

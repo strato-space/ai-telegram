@@ -43,6 +43,7 @@ class ActiveRequest:
     writer: asyncio.StreamWriter
     auto_approve: bool
     allow_always: bool
+    show_tools: bool
     strip_leading_newlines: bool
     permission_queue: asyncio.Queue[str | None]
     started_output: bool = False
@@ -75,7 +76,13 @@ class AcpServiceClient(Client):
             return
         if update_type in ("tool_call_start", "tool_call_update"):
             title = getattr(update, "title", None) or _safe_get(update, "title")
-            debug_print("[acp]", f"Tool update: {title}")
+            if active.show_tools:
+                await _send_message(
+                    active.writer,
+                    {"type": "tool", "event": update_type, "title": title},
+                )
+            else:
+                debug_print("[acp]", f"Tool update: {title}")
             return
         if update_type:
             debug_print("[acp]", f"Session update: {update_type}")
@@ -374,6 +381,7 @@ async def run_service(args: argparse.Namespace) -> int:
                 writer=writer,
                 auto_approve=bool(message.get("auto_approve")),
                 allow_always=bool(message.get("allow_always")),
+                show_tools=bool(message.get("show_tools")),
                 strip_leading_newlines=bool(message.get("strip_leading_newlines")),
                 permission_queue=asyncio.Queue(),
             )

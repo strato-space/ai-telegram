@@ -1,0 +1,15 @@
+[project]
+name = "ai-telegram"
+version = "0.1.0"
+description = "Telegram-native bots with fast-agent ACP"
+readme = "srs.md"
+requires-python = ">=3.13.5"
+dependencies = [
+  "fast-agent-mcp",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+fast-agent-mcp = { path = "/home/strato-space/fast-agent" }

@@ -2,3 +2,4 @@
 **/fastagent.secrets.yaml
 *.sock
 acp/acp_sessions.db
+.env
