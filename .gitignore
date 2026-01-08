@@ -1,0 +1,4 @@
+**/__pycache__
+**/fastagent.secrets.yaml
+*.sock
+acp/acp_sessions.db
